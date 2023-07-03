@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -21,7 +22,7 @@ public class PlayerManagementGUI extends JFrame {
     private final JButton playButton;
     private int playerCount;
 
-    private final DefaultListModel<Player> playerListModel;
+    private final List<Player> playerList;
 
     /**
      * The Scoreboard panel.
@@ -105,7 +106,7 @@ public class PlayerManagementGUI extends JFrame {
         setVisible(true);
 
         playerCount = 0;
-        playerListModel = new DefaultListModel<>();
+        playerList = new ArrayList<>();
 
         setWindowSize();
         setVisible(true);
@@ -134,14 +135,16 @@ public class PlayerManagementGUI extends JFrame {
 
         if (playerName != null && !playerName.isEmpty()) {
             // Controllo se il nome è già presente nella lista dei giocatori
-            if (playerListModel.contains(playerName)) {
-                JOptionPane.showMessageDialog(this, "Il nome del giocatore è già stato inserito.", "Nome duplicato", JOptionPane.ERROR_MESSAGE);
-                return;
+            for(Player p : playerList){
+                if(p.getName().equals(playerName)) {
+                    JOptionPane.showMessageDialog(this, "Il nome del giocatore è già stato inserito.", "Nome duplicato", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
 
             Player newPlayer = new Player(playerName);
             playerCount++;
-            playerListModel.addElement(newPlayer);
+            playerList.add(newPlayer);
 
             // Disabilita il pulsante Play se non ci sono più giocatori
             playButton.setEnabled(playerCount > 1);
@@ -152,12 +155,18 @@ public class PlayerManagementGUI extends JFrame {
             JButton removeButton = new JButton("Rimuovi");
             removeButton.addActionListener(e -> {
                 playerCount--;
-                playerListModel.removeElement(playerName);
-                playersPanel.remove(playerPanel);
-                playersPanel.revalidate();
-                playersPanel.repaint();
+                Iterator<Player> iterator = playerList.iterator();
+                while (iterator.hasNext()) {
+                    Player p = iterator.next();
+                    if (p.getName().equals(playerName)) {
+                        iterator.remove(); // Safely remove the current element
+                        playersPanel.remove(playerPanel);
+                        playersPanel.revalidate();
+                        playersPanel.repaint();
+                    }
+                }
 
-                // Abilita il pulsante Play se ci sono ancora giocatori
+                // Enable the playButton if there are still players
                 playButton.setEnabled(playerCount > 1);
             });
 
@@ -196,8 +205,8 @@ public class PlayerManagementGUI extends JFrame {
 
         // Aggiunta dei giocatori alla classifica
         ArrayList<Player> playerList = new ArrayList<>();
-        for (int i = 0; i < playerListModel.getSize(); i++) {
-            String playerName = playerListModel.getElementAt(i).getName();
+        for (Player value : this.playerList) {
+            String playerName = value.getName();
             Player player = new Player(playerName);
             playerList.add(player);
         }
@@ -299,8 +308,8 @@ public class PlayerManagementGUI extends JFrame {
         JPanel selectionPanel = new JPanel(new GridLayout(playerCount, 1));
 
         // Aggiunta dei pulsanti per i giocatori
-        for (int i = 0; i < playerListModel.getSize(); i++) {
-            String playerName = playerListModel.getElementAt(i).getName();
+        for (Player player : playerList) {
+            String playerName = player.getName();
             JButton playerButton = new JButton(playerName);
             playerButton.addActionListener(e -> {
                 openImageFrame(imagePath, playerName, points);
@@ -381,8 +390,8 @@ public class PlayerManagementGUI extends JFrame {
         JPanel selectionPanel = new JPanel(new GridLayout(playerCount, 1));
 
         // Aggiunta dei pulsanti per i giocatori
-        for (int i = 0; i < playerListModel.getSize(); i++) {
-            String playerName = playerListModel.getElementAt(i).getName();
+        for (Player player : playerList) {
+            String playerName = player.getName();
             JButton playerButton = new JButton(playerName);
             playerButton.addActionListener(e -> {
                 openSongFrame(songName, playerName, points);
@@ -554,8 +563,8 @@ public class PlayerManagementGUI extends JFrame {
         JPanel selectionPanel = new JPanel(new GridLayout(playerCount, 1));
 
         // Aggiunta dei pulsanti per i giocatori
-        for (int i = 0; i < playerListModel.getSize(); i++) {
-            String playerName = playerListModel.getElementAt(i).getName();
+        for (Player player : playerList) {
+            String playerName = player.getName();
             JButton playerButton = new JButton(playerName);
             playerButton.addActionListener(e -> {
                 modifyScore(playerName);
@@ -682,10 +691,7 @@ public class PlayerManagementGUI extends JFrame {
      * Aggiorna la classifica
      */
     private void updatePlayerScoreboard(Boolean isCorrect, int points, String playerName, boolean recalculate) {
-        List<Player> players = new ArrayList<>();
-        for (int i = 0; i < playerListModel.getSize(); i++) {
-            players.add(playerListModel.getElementAt(i));
-        }
+        List<Player> players = new ArrayList<>(playerList);
 
         if(recalculate){
             for (Player value : players) {
